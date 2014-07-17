@@ -11,7 +11,7 @@ Additionally, this is all streamlined into a Raspoberry Pi (pictured above) with
 #####Software Dependencies: 
 * aircrack-ng
 * Tkinter python library (python-tk in debian)
-* hosapd
+* hostapd
 * dnsmasq
 * Network Manager, specifically nmcli
 
