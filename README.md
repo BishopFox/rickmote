@@ -6,7 +6,7 @@ rickmote
 
 The Rickmote is a Python program for Hijacking Chromecasts and playing arbitrary video to their connected TVs. Full details on how the hack works will be provided at the talk "Rickrolling your Neighbors with Google Chromecast" at HOPE X in New York. See you there!
 
-Additionally, this is all streamlined into a Raspoberry Pi (pictured above) with details to come soon at BlackHat USA 2014's Tools Arsenal! If you just can't wait and want to try pranking your friends right away, here are the vital ingredients:
+Additionally, this is all streamlined into a Raspberry Pi (pictured above) with details to come soon at BlackHat USA 2014's Tools Arsenal! If you just can't wait and want to try pranking your friends right away, here are the vital ingredients:
 
 #####Software Dependencies: 
 * aircrack-ng
