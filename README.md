@@ -15,7 +15,7 @@ Additionally, this is all streamlined into a Raspberry Pi (pictured above) with 
 * dnsmasq
 * Network Manager, specifically nmcli
 
-### 3D Printed Case:
+#####3D Printed Case:
 Download the 3D models for the slick Rickmote 3D printed case here at Thingiverse
 http://www.thingiverse.com/thing:398100
 
