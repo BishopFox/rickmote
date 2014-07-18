@@ -15,6 +15,10 @@ Additionally, this is all streamlined into a Raspberry Pi (pictured above) with 
 * dnsmasq
 * Network Manager, specifically nmcli
 
+### 3D Printed Case:
+Download the 3D models for the slick Rickmote 3D printed case here at Thingiverse
+http://www.thingiverse.com/thing:398100
+
 #####Setup Assumptions:
 The Rickmote Controller needs to pull a lot of Wi-Fi shenanigans in order to automate the hack. For best results, you may want to try using Kali Linux as it has the easiest setup for wireless drivers that support injection. Also note that we are actively working on reducing these assumptions! Sorry it's so specific in the meantime.
 * Three wireless interfaces.
